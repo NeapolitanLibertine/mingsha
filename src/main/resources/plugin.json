@@ -1,0 +1,16 @@
+{
+  "id": "team.rainfall.mingsha",
+  "name": "Mingsha AoH2DE",
+  "version": "0.1.0",
+  "sdkVersion": ">=1.4.0",
+  "hasTweaker": false,
+  "useLuminosity": true,
+  "tweakClasses": [
+    "team.rainfall.ctap_mingsha.MixinMapBG",
+    "team.rainfall.ctap_mingsha.MixinCFG",
+    "team.rainfall.ctap_mingsha.MixinGameCalendar",
+    "team.rainfall.ctap_mingsha.MixinCore",
+    "team.rainfall.ctap_mingsha.MixinTouchManager"
+  ]
+
+}
