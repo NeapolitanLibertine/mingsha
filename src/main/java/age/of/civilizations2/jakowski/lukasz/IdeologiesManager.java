@@ -38,7 +38,7 @@ public class IdeologiesManager {
             this.lIdeologies.clear();
         }
 
-        this.lIdeologies = new ArrayList();
+        this.lIdeologies = new ArrayList<>();
 
         try {
             FileHandle fileList = null;
@@ -324,7 +324,6 @@ public class IdeologiesManager {
             }
         } catch (Exception var5) {
         }
-
         nData.add(new ME_Hover_2Type_Space());
         nElements.add(new MEHover_2E(nData));
         nData.clear();

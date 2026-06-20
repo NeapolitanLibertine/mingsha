@@ -4,13 +4,49 @@ package team.rainfall.ctap_mingsha;
 import age.of.civilizations2.jakowski.lukasz.CFG;
 import age.of.civilizations2.jakowski.lukasz.GameCalendar;
 import age.of.civilizations2.jakowski.lukasz.Images;
+import age.of.civilizations2.jakowski.lukasz.Civilization;
+import age.of.civilizations2.jakowski.lukasz.War_GameData;
+import age.of.civilizations2.jakowski.lukasz.Core.Core;
 import age.of.civilizations2.jakowski.lukasz.MenuE_HoverP.*;
+import team.rainfall.finality.luminosity2.annotations.Getter;
 import team.rainfall.finality.luminosity2.annotations.Mixin;
+import team.rainfall.finality.luminosity2.annotations.Setter;
+import team.rainfall.finality.luminosity2.annotations.Shadow;
 
 import java.util.ArrayList;
 import java.util.List;
 @Mixin(mixinClass = "age.of.civilizations2.jakowski.lukasz.Core.Core")
 public class MixinCore {
+    @Shadow
+    private List<War_GameData> lWars = null;
+    @Getter(fieldName = "lWars")
+    public static List<War_GameData> get_lWars(Core core){
+        return null;
+    }
+    @Setter(fieldName = "iWarsSize")
+    public static void set_iWarsSize(Core core,int i){
+
+    }
+    @Getter(fieldName = "iWarsSize")
+    public static int get_iWarsSize(Core core){
+        return 0;
+    }
+    @Shadow
+    private List<Civilization> lCivs = null;
+    @Getter(fieldName = "lCivs")
+    public static List<Civilization> get_lCivs(Core core){
+        return null;
+    }
+    @Shadow
+    private int iCivsSize = 0;
+    @Setter(fieldName = "iCivsSize")
+    public static void set_iCivsSize(Core core,int i){
+
+    }
+    @Getter(fieldName = "iCivsSize")
+    public static int get_iCivsSize(Core core){
+        return 0;
+    }
     public final ME_Hover_v2 getHover_LeaderOfCiv(int nCivID) {
         try {
             List<MEHover_2E> nElements = new ArrayList();

@@ -2,8 +2,10 @@ package team.rainfall.ctap_mingsha;
 
 import age.of.civilizations2.jakowski.lukasz.Files.FileManager;
 import age.of.civilizations2.jakowski.lukasz.GameValues.GameValues;
+import age.of.civilizations2.jakowski.lukasz.Renderer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import team.rainfall.finality.luminosity2.annotations.Mixin;
@@ -11,6 +13,26 @@ import team.rainfall.finality.luminosity2.annotations.Mixin;
 import static age.of.civilizations2.jakowski.lukasz.CFG.*;
 @Mixin(mixinClass = "age.of.civilizations2.jakowski.lukasz.CFG")
 public class MixinCFG {
+
+    public static final void drawVersionLB(SpriteBatch oSB, int iTranslateX) {
+        Renderer.drawText(oSB, FONT_REGULAR_SMALL, "Mingsha AoH2DE by Team Rainfall", PADD + iTranslateX, GAMEHEIGHT - PADD * 2 - TEXT_HEIGHT_DEFAULT_SMALL * 2, new Color(1.0F, 1.0F, 1.0F, 0.25F));
+        Renderer.drawText(oSB, FONT_REGULAR_SMALL, sVERSION + ": " + "2.01 Definitive Edition", PADD + iTranslateX, GAMEHEIGHT - PADD - TEXT_HEIGHT_DEFAULT_SMALL, new Color(1.0F, 1.0F, 1.0F, 0.25F));
+    }
+    public static final void drawVersion_LEFT_BOT(SpriteBatch oSB, int iTranslateX) {
+        Renderer.drawText(oSB, FONT_REGULAR_SMALL, "Mingsha AoH2DE by Team Rainfall", PADD + iTranslateX, GAMEHEIGHT - PADD * 2 - TEXT_HEIGHT_DEFAULT_SMALL * 2, new Color(1.0F, 1.0F, 1.0F, 0.25F));
+        Renderer.drawText(oSB, FONT_REGULAR_SMALL, sVERSION + ": " + "2.01 Definitive Edition", PADD + iTranslateX, GAMEHEIGHT - PADD - TEXT_HEIGHT_DEFAULT_SMALL, new Color(1.0F, 1.0F, 1.0F, 0.25F));
+    }
+    public static final float changeAnimationPos(int animationStepID, float animationChangeViewPos, boolean backAnimation, int nWidth) {
+        final int TOTAL_FRAMES = 20;
+        int step = Math.min(animationStepID, TOTAL_FRAMES);
+        float progress = (float) step / TOTAL_FRAMES;
+        float easedProgress = 1.0f - (float) Math.pow(1.0f - progress, 3);
+        float targetOffset = -nWidth * (backAnimation ? -1 : 1);
+        if (step == TOTAL_FRAMES) {
+            return targetOffset;
+        }
+        return targetOffset * easedProgress;
+    }
     public static final void loadFont(String sFont, String charset, int fontSize) {
         float texSize = charset.getBytes().length;
         int texSize2 = (int) (texSize * ((float) 2 / 3) + 1024);

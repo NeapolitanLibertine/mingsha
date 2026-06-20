@@ -26,7 +26,9 @@ public class MenuElemUI {
     private boolean isInView = false;
     private boolean isHovered = false;
     public ME_Hover menuElemHover;
+    public void updateLanguage_E(){
 
+    }
     public void buildElemHover() {
     }
 
