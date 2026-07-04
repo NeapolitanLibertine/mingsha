@@ -33,10 +33,13 @@ import age.of.civilizations2.jakowski.lukasz.Menus.Colonization.Menu_MM;
 import age.of.civilizations2.jakowski.lukasz.TextB.Text;
 import age.of.civilizations2.jakowski.lukasz.TextB.Sparks.SparksAnimation;
 import age.of.civilizations2.jakowski.lukasz.Title.TitleM;
+import age.of.civilizations2.jakowski.lukasz.MenuProxy;
 import age.of.civilizations2.jakowski.lukasz.Z_Other.DialogType;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import team.rainfall.demp.Menu_Multi;
+import team.rainfall.demp.Menu_MultiTitle;
 import team.rainfall.finality.FinalityLogger;
 
 import java.time.LocalDate;
@@ -56,6 +59,7 @@ public class Menu_Main extends Menu {
     public static int GLGO = 0;
     public static boolean SPECIAL_1 = false;
     public static boolean SPECIAL_2 = false;
+    public static MenuProxy multiMenuProxy = new MenuProxy();
     public List<FSF> sF = new ArrayList();
 
     public static final int getMenuPosX_Default() {
@@ -503,7 +507,7 @@ public class Menu_Main extends Menu {
 
                 }
             });
-            menuElements.add(new Button_Classic_LR_Main((String) null, -1, buttonX, tempH + CFG.BUTTON_H * 2 + CFG.PADD * 2, buttonW, CFG.BUTTON_H, false));
+            menuElements.add(new Button_Classic_LR_Main((String) null, -1, buttonX, tempH + CFG.BUTTON_H * 2 + CFG.PADD * 2, buttonW, CFG.BUTTON_H, true));
 
             this.initMenu((TitleM) null, 0, 0, CFG.GAMEWIDTH, CFG.GAMEHEIGHT, menuElements);
             this.updateLang();
@@ -554,6 +558,7 @@ public class Menu_Main extends Menu {
     }
 
     public final void updateLang() {
+
         this.getMenuElem(0).setTextE(CFG.lang.get("Games"));
         this.getMenuElem(1).setTextE(CFG.lang.get("Editor"));
         this.getMenuElem(3).setTextE(CFG.lang.get("Settings"));
@@ -716,6 +721,13 @@ public class Menu_Main extends Menu {
                 CFG.setDialogType(DialogType.GO_TO_LINK);
                 return;
             case 13:
+                if (!multiMenuProxy.isRegistered()) {
+                    multiMenuProxy.registerTopLevel(new Menu_MultiTitle());
+                    multiMenuProxy.register(multiMenuProxy.getViewID(), new Menu_Multi());
+                    multiMenuProxy.setOrderOfMenuID();
+                    Menu_Multi.multiMenuProxy = multiMenuProxy;
+                }
+                multiMenuProxy.switchToWithoutAnim();
                 return;
         }
 

@@ -10,7 +10,8 @@
     "team.rainfall.ctap_mingsha.MixinCFG",
     "team.rainfall.ctap_mingsha.MixinGameCalendar",
     "team.rainfall.ctap_mingsha.MixinCore",
-    "team.rainfall.ctap_mingsha.MixinTouchManager"
+    "team.rainfall.ctap_mingsha.MixinTouchManager",
+    "team.rainfall.mingsha.MixinGame_Scenarios"
   ]
 
 }

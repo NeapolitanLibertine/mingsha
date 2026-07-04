@@ -2,12 +2,24 @@ package team.rainfall.demp;
 
 import age.of.civilizations2.jakowski.lukasz.CFG;
 import age.of.civilizations2.jakowski.lukasz.Civilization;
+import age.of.civilizations2.jakowski.lukasz.GameAction;
 import age.of.civilizations2.jakowski.lukasz.GameCalendar;
+import age.of.civilizations2.jakowski.lukasz.View;
 import age.of.civilizations2.jakowski.lukasz.Save.SaveGameData.*;
 import team.rainfall.ctap_mingsha.MixinCore;
+import team.rainfall.demp.actions.DiplomaticAction;
+import team.rainfall.demp.actions.DiplomaticActionHandler;
+import team.rainfall.demp.network.GameClient;
+import team.rainfall.demp.network.GameServer;
+import team.rainfall.demp.network.MultiplayerPlayer;
+import team.rainfall.demp.network.NetworkManager;
+import team.rainfall.demp.network.NetworkMessage;
 import age.of.civilizations2.jakowski.lukasz.Save.Save_CivDiplo_GameData;
 import age.of.civilizations2.jakowski.lukasz.VictoryManager;
+import com.badlogic.gdx.Gdx;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.*;
 
 public class MultiplayerManager {
@@ -15,17 +27,85 @@ public class MultiplayerManager {
         new MultiplayerManager();
     private boolean isMultiplayer = false;
     private boolean isHost = false;
+    private boolean waitingForSnapshot = false;
     private String nickname = "Player123";
     private String roomID = null;
+    private int hostPort = 25565;
+    private String hostPassword = "";
+    private volatile boolean pendingHostStart = false;
+    private final List<MultiplayerPlayer> players = new ArrayList<>();
+    private MultiplayerPlayer hostPlayer;
 
     public boolean isMultiplayer() {
         return isMultiplayer;
+    }
+
+    public boolean isHost() {
+        return isHost;
     }
 
     public void joinRoom(String roomID) {
         this.roomID = roomID;
         isMultiplayer = true;
         isHost = false;
+    }
+
+    public void startJoinGame(String host, int port, String password, String username) {
+        this.nickname = username;
+        this.hostPort = port;
+        this.hostPassword = password;
+        this.isMultiplayer = true;
+        this.isHost = false;
+        try {
+            NetworkManager.getInstance().connect(host, port, username, password);
+            new Thread(this::waitForScenarioAndSnapshot, "client-join-watcher").start();
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void waitForScenarioAndSnapshot() {
+        GameClient client = NetworkManager.getInstance().getClient();
+        if (client == null) return;
+        try {
+            while (client.isConnected() && !client.hasHelloAcknowledged()) {
+                Thread.sleep(100);
+            }
+            if (!client.isConnected()) return;
+            while (client.isConnected() && !client.hasPendingScenarioTag()) {
+                Thread.sleep(100);
+            }
+            client.consumePendingScenarioTag();
+            if (!client.isConnected()) return;
+            while (client.isConnected() && !client.hasPendingSnapshot()) {
+                Thread.sleep(100);
+            }
+            if (!client.isConnected()) return;
+            byte[] snapshot = client.consumePendingSnapshot();
+            if (snapshot != null) {
+                Gdx.app.postRunnable(() -> {
+                    loadSnapshot(snapshot);
+                    CFG.menus.setMenuID(View.eCREATE_NEW_GAME);
+                });
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public void sendDiplomaticAction(DiplomaticAction action) {
+        if (isHost) {
+            DiplomaticActionHandler.handle(action);
+            GameServer server = NetworkManager.getInstance().getServer();
+            if (server != null) {
+                server.broadcastMessage(NetworkMessage.createGameAction(action.toBytes()));
+            }
+        } else {
+            GameClient client = NetworkManager.getInstance().getClient();
+            if (client != null) {
+                client.sendMessage(NetworkMessage.createGameAction(action.toBytes()));
+            }
+        }
     }
 
     public void createRoom(String roomID) {
@@ -35,9 +115,189 @@ public class MultiplayerManager {
     }
 
     public void leaveRoom() {
+        releaseTurnWait();
+        resetAllReadiness();
         isMultiplayer = false;
         isHost = false;
         roomID = null;
+        hostPlayer = null;
+        synchronized (players) { players.clear(); }
+        NetworkManager.getInstance().stopAll();
+    }
+
+    public void startHostGame(int port, String password, String username) {
+        this.hostPort = port;
+        this.hostPassword = password;
+        this.nickname = username;
+        this.isMultiplayer = true;
+        this.isHost = true;
+        this.pendingHostStart = true;
+        this.hostPlayer = MultiplayerPlayer.createHost(username);
+        synchronized (players) { players.add(hostPlayer); }
+
+        new Thread(() -> {
+            while (pendingHostStart) {
+                try {
+                    Thread.sleep(300);
+                    if (CFG.startTheGameData != null && CFG.startTheGameData.getIsDone()) {
+                        NetworkManager.getInstance().startServer(hostPort, hostPassword);
+                        GameServer server = NetworkManager.getInstance().getServer();
+                        if (server != null) {
+                            byte[] initialSnapshot = createSnapshot();
+                            if (initialSnapshot != null) {
+                                server.setCurrentSnapshot(initialSnapshot);
+                            }
+                            server.setEventListener(new GameServer.GameEventListener() {
+                                @Override
+                                public void onPlayerConnected(int clientId, String username) {
+                                    onClientPlayerConnected(clientId, username);
+                                }
+
+                                @Override
+                                public void onPlayerDisconnected(int clientId) {
+                                    onClientPlayerDisconnected(clientId);
+                                }
+
+                                @Override
+                                public void onTurnReady(int clientId) {
+                                    Gdx.app.postRunnable(() -> onClientTurnReady(clientId));
+                                }
+                            });
+                        }
+                        pendingHostStart = false;
+                        break;
+                    }
+                } catch (InterruptedException e) {
+                    break;
+                } catch (Exception ignored) {
+                    try { Thread.sleep(1000); } catch (InterruptedException e) { break; }
+                }
+            }
+        }, "host-start-watcher").start();
+    }
+
+    public void stopHostGame() {
+        pendingHostStart = false;
+        NetworkManager.getInstance().stopAll();
+    }
+
+    private void onClientPlayerConnected(int clientId, String username) {
+        MultiplayerPlayer player = MultiplayerPlayer.createClient(clientId, username);
+        synchronized (players) { players.add(player); }
+    }
+
+    private void onClientPlayerDisconnected(int clientId) {
+        synchronized (players) {
+            players.removeIf(p -> p.clientId == clientId);
+        }
+    }
+
+    private void onClientTurnReady(int clientId) {
+        MultiplayerPlayer player = getPlayerByClientId(clientId);
+        if (player != null) {
+            player.turnReady = true;
+        }
+        if (hostPlayer != null && hostPlayer.turnReady && allPlayersReady()) {
+            advanceTurn();
+        }
+    }
+
+    private MultiplayerPlayer getPlayerByClientId(int clientId) {
+        synchronized (players) {
+            for (MultiplayerPlayer p : players) {
+                if (p.clientId == clientId) return p;
+            }
+        }
+        return null;
+    }
+
+    private boolean allPlayersReady() {
+        synchronized (players) {
+            if (players.isEmpty()) return true;
+            for (MultiplayerPlayer p : players) {
+                if (!p.turnReady) return false;
+            }
+            return true;
+        }
+    }
+
+    public int getPlayerCount() {
+        synchronized (players) {
+            return players.size();
+        }
+    }
+
+    public void markPlayerReadyAndCheck() {
+        if (isHost) {
+            if (hostPlayer != null) {
+                hostPlayer.turnReady = true;
+            }
+            if (allPlayersReady()) {
+                advanceTurn();
+            } else {
+                waitForSnapshot();
+            }
+        } else {
+            sendTurnReadyToServer();
+            waitForSnapshot();
+        }
+    }
+
+    private void sendTurnReadyToServer() {
+        if (NetworkManager.getInstance().getClient() != null) {
+            NetworkManager.getInstance().getClient().sendMessage(NetworkMessage.createTurnReady());
+        }
+    }
+
+    private void advanceTurn() {
+        if (waitingForSnapshot) {
+            releaseTurnWait();
+        }
+        CFG.gameAction.takeNextTurn();
+        byte[] snapshot = createSnapshot();
+        if (snapshot != null) {
+            GameServer server = NetworkManager.getInstance().getServer();
+            if (server != null) {
+                server.setCurrentSnapshot(snapshot);
+                if (server.getClientCount() > 0) {
+                    server.broadcastSnapshot(snapshot);
+                }
+            }
+        }
+        resetAllReadiness();
+    }
+
+    public void resetAllReadiness() {
+        synchronized (players) {
+            for (MultiplayerPlayer p : players) {
+                p.turnReady = false;
+            }
+        }
+    }
+
+    public boolean isWaitingForSnapshot() {
+        return waitingForSnapshot;
+    }
+
+    public void waitForSnapshot() {
+        this.waitingForSnapshot = true;
+        try {
+            CFG.menus.getInGameProvInfo().getMenuElem(0).setClickable(false);
+            CFG.menus.getInGameProvInfo().getMenuElem(0).setTextE("Waiting...");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void releaseTurnWait() {
+        this.waitingForSnapshot = false;
+        try {
+            CFG.gameAction.setActiveTurnState(GameAction.TurnStates.INPUT_ORDERS);
+            CFG.menus.getInGameProvInfo().getMenuElem(0).setClickable(true);
+            CFG.menus.getInGameProvInfo().getMenuElem(0).setTextE(CFG.lang.get("NextTurn"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void loadSnapshot(byte[] data) {
@@ -168,6 +428,8 @@ public class MultiplayerManager {
             for (int i = 0; i < g9.lPlagues_INGAME.size(); i++) {
                 CFG.plagueManager.plaguesActive.add(g9.lPlagues_INGAME.get(i));
             }
+
+            releaseTurnWait();
         } catch (Exception e) {
             e.printStackTrace();
         }

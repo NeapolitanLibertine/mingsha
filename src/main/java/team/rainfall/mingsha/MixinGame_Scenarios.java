@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 @Mixin(mixinClass = "age.of.civilizations2.jakowski.lukasz.Game_Scenarios")
 public class MixinGame_Scenarios {
-    public List<String> lScenarios_TagsList = new ArrayList();
-    public List<Boolean> isInternal = new ArrayList();
+    public List<String> lScenarios_TagsList = new ArrayList<>();
+    public List<Boolean> isInternal = new ArrayList<>();
     public final void loadEventsData() {
         try {
             CFG.eventsManager.events = new Events_GameData();
