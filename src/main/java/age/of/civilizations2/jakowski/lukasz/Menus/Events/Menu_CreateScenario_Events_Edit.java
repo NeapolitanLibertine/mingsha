@@ -185,7 +185,8 @@ public class Menu_CreateScenario_Events_Edit extends Menu {
       for (int i = 0; i < CFG.eventsManager.createScenarioEvents.getTriggersSize(); i++) {
          menuElements.add(
             new Button_NewGameStyle_Left(
-               CFG.eventsManager.createScenarioEvents.getTrigger(i).getTriggerText(),
+               (CFG.eventsManager.createScenarioEvents.getTrigger(i).isDisplayCondition ? "[\u663e\u793a] " : "")
+                  + CFG.eventsManager.createScenarioEvents.getTrigger(i).getTriggerText(),
                CFG.PADD * 2,
                CFG.PADD,
                tPosY,
@@ -196,7 +197,7 @@ public class Menu_CreateScenario_Events_Edit extends Menu {
          );
          menuElements.add(
             new Button_NewGameStyle_Middle(
-               CFG.eventsManager.getTriggerRoleText(CFG.eventsManager.createScenarioEvents.getTrigger(i)),
+               CFG.eventsManager.getEventTypeText(CFG.eventsManager.createScenarioEvents.getTrigger(i).triggerType),
                -1,
                tempW - CFG.PADD - (int)((float)CFG.BUTTON_H * 0.6F) * 2,
                tPosY,
@@ -753,8 +754,9 @@ public class Menu_CreateScenario_Events_Edit extends Menu {
                   tTrigger.isDisplayCondition = !tTrigger.isDisplayCondition;
                }
 
-               this.getMenuElem(iID + 9).setTextE(CFG.eventsManager.getTriggerRoleText(tTrigger));
-               CFG.toastM.addM(this.getMenuElem(iID + 9).getTextE(), CFG.COLOR_HOVER_TITLE);
+               this.getMenuElem(iID + 9).setTextE(CFG.eventsManager.getEventTypeText(tTrigger.triggerType));
+               this.getMenuElem(iID + 8).setTextE((tTrigger.isDisplayCondition ? "[\u663e\u793a] " : "") + tTrigger.getTriggerText());
+               CFG.toastM.addM(CFG.eventsManager.getTriggerRoleText(tTrigger), CFG.COLOR_HOVER_TITLE);
             } else {
                CFG.eventsManager.createScenarioEvents.removeTrigger(iID / 3);
                this.saveEditData();
