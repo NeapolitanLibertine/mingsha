@@ -45,10 +45,6 @@ public class Menu_CreateScenario_Events_SelectDecision_List extends Menu {
          } else {
             menuElements.add(this.labeledInput("Search: ", CounterUI.filter, nPosY++));
             menuElements.add(
-               new Button_Classic("[ " + CFG.lang.get("Search") + " ]", (int)(50.0F * CFG.GUI_SCALE), 0, CFG.BUTTON_H * nPosY + CFG.PADD * (nPosY + 1), CFG.GAMEWIDTH, CFG.BUTTON_H, true)
-            );
-            nPosY++;
-            menuElements.add(
                new Button_Classic("+ Counter", (int)(50.0F * CFG.GUI_SCALE), 0, CFG.BUTTON_H * nPosY + CFG.PADD * (nPosY + 1), CFG.GAMEWIDTH, CFG.BUTTON_H, true)
             );
             nPosY++;
@@ -218,12 +214,15 @@ public class Menu_CreateScenario_Events_SelectDecision_List extends Menu {
             switch (iID) {
                case 0:
                   CFG.showKeyboard();
+                  CFG.keyboardSave = new CFG.Keyboard_Action() {
+                     @Override
+                     public void action() {
+                        CounterUI.filter = CFG.keybMess == null ? "" : CFG.keybMess.trim();
+                        Menu_CreateScenario_Events_SelectDecision_List.this.rebuild();
+                     }
+                  };
                   return;
-               case 1:
-                  CounterUI.filter = this.getMenuElem(0).getTextE() == null ? "" : this.getMenuElem(0).getTextE().trim();
-                  this.rebuild();
-                  return;
-               case 2: {
+               case 1: {
                   String nName = CounterDefs.createNewCounter();
                   if (CounterUI.mode == CounterUI.MODE_MANAGER) {
                      CounterUI.mode = CounterUI.MODE_EDIT;
@@ -235,7 +234,7 @@ public class Menu_CreateScenario_Events_SelectDecision_List extends Menu {
                   return;
                }
                default: {
-                  int tIndex = iID - 3;
+                  int tIndex = iID - 2;
                   if (tIndex >= 0 && tIndex < this.shownNames.size()) {
                      if (CounterUI.mode == CounterUI.MODE_MANAGER) {
                         CounterUI.mode = CounterUI.MODE_EDIT;
