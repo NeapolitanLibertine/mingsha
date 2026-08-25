@@ -71,7 +71,7 @@ public class Event_Outcome_Counter_Apply extends Event_Outcome {
     public static String targetName(int nTarget) {
         switch (nTarget) {
             case TARGET_MONEY:
-                return CFG.lang.get("Money");
+                return CFG.lang.get("Treasury");
             case TARGET_POPULATION:
                 return CFG.lang.get("Population") + " %";
             case TARGET_ECONOMY:
@@ -145,7 +145,7 @@ public class Event_Outcome_Counter_Apply extends Event_Outcome {
 
     @Override
     public String getConditionText() {
-        return "Counter APPLY: " + targetName(this.target) + " = " + this.expStr;
+        return CFG.lang.get("Counter") + " " + CFG.lang.get("Apply") + ": " + targetName(this.target) + " = " + this.expStr;
     }
 
     @Override

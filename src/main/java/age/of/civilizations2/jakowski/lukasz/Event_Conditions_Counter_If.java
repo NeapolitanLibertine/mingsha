@@ -59,7 +59,7 @@ public class Event_Conditions_Counter_If extends Event_Conditions {
 
     @Override
     public String getConditionText() {
-        return "Counter: " + this.expStr;
+        return CFG.lang.get("Counter") + ": " + this.expStr;
     }
 
     @Override

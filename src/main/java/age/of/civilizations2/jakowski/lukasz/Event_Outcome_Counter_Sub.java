@@ -78,7 +78,7 @@ public class Event_Outcome_Counter_Sub extends Event_Outcome {
 
     @Override
     public String getConditionText() {
-        return "Counter: " + CounterDefs.displayOf(this.counterName) + " - " + this.iValue;
+        return CFG.lang.get("Counter") + ": " + CounterDefs.displayOf(this.counterName) + " - " + this.iValue;
     }
 
     @Override

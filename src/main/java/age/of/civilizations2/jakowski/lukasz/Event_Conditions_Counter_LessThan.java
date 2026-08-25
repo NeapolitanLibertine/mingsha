@@ -72,7 +72,7 @@ public class Event_Conditions_Counter_LessThan extends Event_Conditions {
 
     @Override
     public String getConditionText() {
-        return "Counter: " + CounterDefs.displayOf(this.counterName) + " < " + this.iValue;
+        return CFG.lang.get("Counter") + ": " + CounterDefs.displayOf(this.counterName) + " < " + this.iValue;
     }
 
     @Override
