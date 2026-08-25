@@ -48,3 +48,6 @@ libs/game.jar
 *.bak
 /tmp-*
 /decompiled_reference.zip
+
+# UI assets are not tracked in the repo
+/src/main/resources/UI/
