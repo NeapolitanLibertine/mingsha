@@ -30,7 +30,17 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import team.rainfall.mingsha.utils.EventCopyUtil;
+import team.rainfall.mingsha.utils.HiddenEvents;
 
+/**
+ * 事件列表。marker 事件（{@link HiddenEvents}）不进列表：它们只是某个功能的存档容器，
+ * 打开/复制/删除都没有意义，删掉还会连带丢数据。
+ * <p>
+ * 元素与事件下标不再一一对应，但这里本来也不是靠算术对应的 —— 行元素自己用
+ * {@code setCurr(i)} 记住了事件下标，{@code actionEL} 里的 {@code % 3} 只用来分辨
+ * 一行里点的是行本身、复制还是删除，所以跳过若干事件不影响点击落点。行首序号改用
+ * 显示序号，否则被隐藏的事件会在编号里留下缺口，反而把它暴露出来。
+ */
 public class Menu_CreateScenario_Events_List extends Menu {
    public static String sSearch = "";
    public static String searchText = "";
@@ -59,17 +69,18 @@ public class Menu_CreateScenario_Events_List extends Menu {
       tPosY += menuElements.get(menuElements.size() - 1).getHeightE() + CFG.PADD;
       if (searchText != null && searchText.length() != 0) {
          String searchTL = searchText.toLowerCase();
+         int tShown = 0;
 
          for (int i = 0; i < CFG.eventsManager.getEventsSize(); i++) {
-            if (CFG.eventsManager.getEvent(i).getEventName().toLowerCase().contains(searchTL)) {
+            if (!HiddenEvents.isHidden(CFG.eventsManager.getEvent(i))
+               && CFG.eventsManager.getEvent(i).getEventName().toLowerCase().contains(searchTL)) {
                CFG.eventsManager.iCreateEvent_Day = CFG.eventsManager.getEvent(i).getEventDate_Since().iEventDay;
                CFG.eventsManager.iCreateEvent_Month = CFG.eventsManager.getEvent(i).getEventDate_Since().iEventMonth;
                CFG.eventsManager.iCreateEvent_Year = CFG.eventsManager.getEvent(i).getEventDate_Since().iEventYear;
                menuElements.add(
                   new Button_In_Game_Box_CivID_LEFT(
                      CFG.eventsManager.getEvent(i).getCivID(),
-                     i
-                        + 1
+                     ++tShown
                         + ". "
                         + CFG.eventsManager.getEvent(i).getEventName()
                         + (
@@ -176,15 +187,20 @@ public class Menu_CreateScenario_Events_List extends Menu {
             }
          }
       } else {
+         int tShown = 0;
+
          for (int ix = 0; ix < CFG.eventsManager.getEventsSize(); ix++) {
+            if (HiddenEvents.isHidden(CFG.eventsManager.getEvent(ix))) {
+               continue;
+            }
+
             CFG.eventsManager.iCreateEvent_Day = CFG.eventsManager.getEvent(ix).getEventDate_Since().iEventDay;
             CFG.eventsManager.iCreateEvent_Month = CFG.eventsManager.getEvent(ix).getEventDate_Since().iEventMonth;
             CFG.eventsManager.iCreateEvent_Year = CFG.eventsManager.getEvent(ix).getEventDate_Since().iEventYear;
             menuElements.add(
                new Button_In_Game_Box_CivID_LEFT(
                   CFG.eventsManager.getEvent(ix).getCivID(),
-                  ix
-                     + 1
+                  ++tShown
                      + ". "
                      + CFG.eventsManager.getEvent(ix).getEventName()
                      + (
@@ -374,7 +390,7 @@ public class Menu_CreateScenario_Events_List extends Menu {
 
    @Override
    public void updateLang() {
-      this.getTitleM().setText(CFG.lang.get("Events") + " [" + CFG.getNumberWthSpaces("" + CFG.eventsManager.getEventsSize()) + "]");
+      this.getTitleM().setText(CFG.lang.get("Events") + " [" + CFG.getNumberWthSpaces("" + HiddenEvents.visibleCount()) + "]");
    }
 
    @Override
